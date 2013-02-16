@@ -1,0 +1,795 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%            commenting.sty Version 1.3             %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                       %
+%               Copyright (C) 2011 by:                  %
+%                                                       %
+%                 Emanuele D'Osualdo                    %
+%            <emanuele.dosualdo@gmail.com>              %
+%                                                       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                       %
+% This work may be distributed and/or modified under    %
+% the conditions of the LaTeX Project Public License,   %
+% either version 1.3 of this license or (at your        %
+% option) any later version.                            %
+% The latest version of this license is in              %
+% http://www.latex-project.org/lppl.txt                 %
+% and version 1.3 or later is part of all               %
+% distributions of LaTeX version 2005/12/1 or later.    %
+%                                                       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%% TODO %%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO: Detect math mode and adapt mpar and mode        %
+% TODO: Inline/Block versions of comment comments       %
+% TODO: Add \sideremark with \docwarning appearance     %
+% TODO: Complete and document TodoList                  %
+% TODO: Better List of ToDos and Comments               %
+% TODO: change remark to environment?                   %
+% TODO: document mentions and generate marks            %
+% TODO: Todo box better behaved when indented?          %
+%       (\linewidth)                                    %
+% TODO: Inline todo box: \later or \dolater             %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{commenting}%
+	[2011/07/04 commenting.sty v1.3 - Emanuele D'Osualdo]
+
+\newif\ifdraft
+\newif\if@comm@pdfcomments\@comm@pdfcommentsfalse
+
+\newlength{\comm@todo@vsep}
+\setlength{\comm@todo@vsep}{2ex}
+\addtolength{\comm@todo@vsep}{2\fboxrule}
+\addtolength{\comm@todo@vsep}{3\fboxsep}
+
+\newcommand{\comm@todovsp}{\vspace{\comm@todo@vsep}\par}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                 OPTIONS                 %%%
+
+\DeclareOption{draft}{\drafttrue}
+\DeclareOption{final}{\draftfalse}
+\ExecuteOptions{final}
+
+\DeclareOption{nosign}{
+	\renewcommand{\comm@comment@signature}[1]{}
+	\renewcommand{\comm@comment@format@signature}[1]{}
+}
+\DeclareOption{nodate}{\renewcommand{\comm@format@date}[1]{}}
+
+\DeclareOption{nompar}{
+	\renewcommand{\comm@comment@signature}{\comm@comment@format@signature}
+	\renewcommand{\comm@comment@mpar}[1]{}
+	\renewcommand{\comm@todo@mpar}[1]{}
+	\renewcommand{\comm@changed@mpar}[3]{%
+		\ifx#3\relax\else%
+		\noindent{\comm@color{#1}%
+		\OpenCommentBraket%
+			\comm@getstyle{#1}%
+			\comm@format@date{#2}{#3}%
+			\comm@comment@format@signature{#1}%
+		\ClosedCommentBraket}%
+		\fi%
+	}
+	\def\comm@require@mparhack{}
+	\let\comm@annot\comm@comment@
+} % end nompar
+
+\DeclareOption{marksonly}{
+	\def\comm@markmpar#1#2{%
+		\marginpar%
+			[\leavevmode\raggedleft%
+			 \comm@color{#1}\csname#2MarkL\endcsname]%
+			{\leavevmode\raggedright%
+			 \comm@color{#1}\csname #2MarkR\endcsname}%
+	}
+	\renewcommand{\comm@comment@signature}{\comm@comment@format@signature}
+	\renewcommand{\comm@comment@mpar}[1]{\comm@markmpar{#1}{Comment}}
+	\renewcommand{\comm@todo@mpar}[1]{%
+		\marginpar%
+		[\leavevmode\raggedleft\footnotesize\comm@color{todo}\comm@todovsp\TodoMarkL]%
+		{\leavevmode\raggedright\footnotesize\comm@color{todo}\comm@todovsp\TodoMarkR}%
+		}
+	\renewcommand{\comm@changed@mpar}[3]{%
+		\ifx#3\relax\else%
+		\noindent{\comm@color{#1}%
+		\OpenCommentBraket%
+			\comm@getstyle{#1}%
+			\comm@format@date{#2}%
+			\comm@comment@format@signature{#1}%
+		\ClosedCommentBraket}%
+		\comm@markmpar{#1}{Changed}%
+		\fi%
+	}
+	%\def\comm@require@mparhack{}
+	\let\comm@annot\comm@comment@
+} % end marksonly
+
+\DeclareOption{nocolor}{
+	\def\comm@require@xcolor{}
+	\def\comm@color#1{}
+}
+
+\DeclareOption{noding}{
+	\def\comm@define@marks{
+		\newcommand{\NoteMark}{$\star$}
+		%\newcommand{\MistakeMark}{\textbf{!!!}}
+		\newcommand{\ChangedMarkR}{\textasteriskcentered}
+		\newcommand{\ChangedMarkL}{\textasteriskcentered}
+		\newcommand{\TodoMarkR}{\textdagger}
+		\newcommand{\TodoMarkL}{\textdagger}
+		\newcommand{\AuthorMark}{\textbullet}
+	}
+}% end noding
+
+\DeclareOption{bfstyle}{\def\comm@comm@defstyle{\bf}}
+\DeclareOption{itstyle}{\def\comm@comm@defstyle{\it}}
+\DeclareOption{sfstyle}{\def\comm@comm@defstyle{\sf}}
+\DeclareOption{scstyle}{\def\comm@comm@defstyle{\sc}}
+
+\DeclareOption{pdfcomment}{\@comm@pdfcommentstrue}
+
+\DeclareOption{nomentions}{
+	\def\activateMentions{}
+}
+
+%%%              END OPTIONS                %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makeatother
+	\let\TextAt=@
+	\catcode`\@=\active%
+	\def\activateMentions{%
+% 		\catcode`\@=\active%
+% 		\def @##1:{\TextAt\underline{##1}:}%
+	}
+\makeatletter%
+%TODO: add a mention@mark
+
+\def\comm@require@xcolor{\RequirePackage{xcolor}}
+
+\def\comm@define@marks{
+	\RequirePackage{bbding}
+
+	\newcommand{\NoteMark}{\raisebox{-1.5pt}{\PencilRightDown}}
+	%\newcommand{\MistakeMark}{{\XSolidBrush}}
+	\newcommand{\ChangedMarkR}{\raisebox{-1.5pt}{\scriptsize\PencilLeft}}
+	\newcommand{\ChangedMarkL}{\raisebox{-1.5pt}{\scriptsize\PencilRight}}
+	\newcommand{\TodoMarkR}{\raisebox{-1.5pt}{\NibLeft}}
+	\newcommand{\TodoMarkL}{\raisebox{-1.5pt}{\NibRight}}
+	\newcommand{\AuthorMark}{{\small\NibSolidRight}}
+}
+\def\comm@require@mparhack{\RequirePackage{mparhack}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%        TYPESETTING OF COMMENTS          %%%
+
+\newcommand{\comm@format@date}[1]{\ifx!#1!\else(#1)\,\fi}
+
+\newcommand{\comm@comment@format@signature}[1]{%
+	\if!\comm@getname{#1}!\else\,--\,\texttt{\comm@getname{#1}}\fi}
+
+\newcommand{\comm@comment@signature}[1]{}
+
+\newcommand{\comm@comment@mpar}[1]{%
+	\marginpar%
+		[%
+			\leavevmode%
+			\raggedleft\footnotesize\comm@color{#1}%
+			\CommentMarkL~%
+			\ifx#1\relax\else\texttt{\comm@getname{#1}}\fi%
+		]%
+		{%
+			\leavevmode%
+			\raggedright\footnotesize\comm@color{#1}%
+			\CommentMarkR~%
+			\ifx#1\relax\else\texttt{\comm@getname{#1}}\fi%
+		}%
+}
+
+\newcommand{\comm@todo@mpar}[1]{%
+	\marginpar%
+		[\leavevmode\raggedleft\footnotesize\comm@color{todo}\comm@todovsp\TodoMarkL\ #1]%
+		{\leavevmode\raggedright\footnotesize\comm@color{todo}\comm@todovsp\TodoMarkR\ #1}%
+}
+
+\newcommand{\comm@changed@mpar}[3]{%
+	\marginpar%
+	[%
+		\leavevmode%
+		\raggedleft\footnotesize\comm@color{#1}%
+		\ChangedMarkL~\ifx#3\relax\else #3 --\fi%
+		\ifx#1\relax\else\texttt{\comm@getname{#1}}~\fi%
+		{\tiny\raisebox{.5pt}{\comm@format@date{#2}}}%
+	]%
+	{%
+		\leavevmode%
+		\raggedright\footnotesize\comm@color{#1}%
+		\ChangedMarkR~\ifx#3\relax\else #3 --\fi%
+		\ifx#1\relax\else\texttt{\comm@getname{#1}}~\fi%
+		{\tiny\raisebox{.5pt}{\comm@format@date{#2}}}%
+	}%
+}
+
+%\newcounter{comm@commtot}
+\newcommand{\comm@validname}[1]{%
+	\@ifundefined{comm@#1@name}%
+		{%
+			\PackageError{commenting}{Author `#1' not defined!}{}%
+		}{}%
+}
+\def\comm@if@enabled#1{\csname if#1@enabled\endcsname}
+
+\newtoks\comm@commlst
+\newcounter{comm@commnum}
+\newlength\comm@lstlabel@width
+\setlength\comm@lstlabel@width{6em}
+
+\newcommand{\comm@logcomment}[4]{%
+	\global\comm@commlst=\expandafter{%
+		\the\comm@commlst {\comm@color{#1}%
+		\item[\textbf{\footnotesize #2} #4] #3%
+		\comm@comment@format@signature{#1}}}%
+	\stepcounter{comm@commnum}%
+}
+
+\newcommand{\comm@comment}[3]{%
+	\comm@validname{#1}%
+	\comm@if@enabled{#1}% and
+	\comm@date@check{#2}% and
+	\if@comm@dateok%
+		\activateMentions%
+		\noindent{\comm@color{#1}%
+		\OpenCommentBraket%
+			\comm@comment@mpar{#1}%
+			\comm@getstyle{#1}%
+			\comm@format@date{#2}{#3}%
+			\comm@comment@signature{#1}%
+		\makeatother%
+		\ClosedCommentBraket}%
+		\comm@logcomment{#1}{#2}{#3}{\CommentMarkL}%
+	\fi\fi% endif
+	\if@comm@pdfcomments%
+		\pdfcomment[color=#1col, author=\comm@getname{#1}]{#3}%
+	\fi\ignorespaces%
+}
+\newcommand{\comm@comment@}[3]{
+	\comm@validname{#1}%
+	\comm@if@enabled{#1}%
+	\comm@date@check{#2}% and
+	\if@comm@dateok%
+		\activateMentions%
+		\noindent{\comm@color{#1}%
+		\OpenCommentBraket%
+			\comm@getstyle{#1}%
+			\comm@format@date{#2}{#3}%
+			\comm@comment@format@signature{#1}%
+		\makeatother%
+		\ClosedCommentBraket}%
+		\comm@logcomment{#1}{#2}{#3}{$\phantom{\triangleright}$}%
+	\fi\fi%
+	\if@comm@pdfcomments%
+		\pdfcomment[color=#1col, author=\comm@getname{#1}]{#3}%
+	\fi\ignorespaces%
+}
+
+\newcommand{\comm@annot}[3]{%
+	\comm@validname{#1}%
+	\comm@if@enabled{#1}%
+	\comm@date@check{#2}% and
+	\if@comm@dateok%
+		\marginpar%
+			[\leavevmode%
+			 \raggedleft\footnotesize\comm@color{#1}%
+			 \comm@getstyle{#1}\CommentMarkL~{#3} %
+			 \comm@comment@format@signature{#1}%
+			 {~\tiny\raisebox{.5pt}{\comm@format@date{#2}}}]%
+			{\leavevmode%
+			 \raggedright\footnotesize\comm@color{#1}%
+			 \comm@getstyle{#1}\CommentMarkR~{#3} %
+			 \comm@comment@format@signature{#1}%
+			 {~\tiny\raisebox{.5pt}{\comm@format@date{#2}}}}%
+			\comm@logcomment{#1}{#2}{#3}{\CommentMarkL}%
+	\fi\fi%
+	\if@comm@pdfcomments%
+		\pdfmargincomment[color=#1col, author=\comm@getname{#1}]{#3}%
+	\fi\ignorespaces%
+}
+
+\newcommand{\comm@changed}[3]{%
+	\@ifnextchar[%
+		{\comm@changed@txt{#1}{#2}{#3}}%
+		{\comm@changed@txt@{#1}{#2}{#3}{}}%
+}
+\def\comm@changed@txt#1#2#3[#4]{\comm@changed@txt@{#1}{#2}{#3}{#4}}
+\newcommand{\comm@changed@txt@}[4]{%
+	\comm@validname{#1}%
+	\comm@date@check{#2}%
+	\if@comm@dateok%
+	\comm@if@enabled{#1}%
+		\comm@changed@mpar{#1}{#2}{#4}{\comm@color{#1}%
+		\if@comm@pdfcomments%
+			\pdfmarkupcomment%
+				[color=#1col, author=\comm@getname{#1},%
+				markup=Highlight]{\null#3\null}{#4 #2}%
+		\else%
+            \null#3\null%
+        \fi%
+        }%
+        \comm@logcomment{#1}{#2}{change: #3; #4}{\ChangedMarkL}%
+    \else%
+        \if@comm@pdfcomments%
+            \pdfmarkupcomment%
+                [color=#1col, author=\comm@getname{#1},%
+                markup=Highlight]{\null#3\null}{#4 #2}%
+        \else%
+			\null#3\null%
+		\fi%
+	\fi%
+}
+\newcommand{\comm@changed@}[3]{%
+	\comm@validname{#1}%
+	\comm@date@check{#2}%
+	\if@comm@dateok%
+	\comm@if@enabled{#1}%
+		{\comm@color{#1}{#3}}%
+		\comm@logcomment{#1}{#2}{change: #3}{\ChangedMarkL}%
+	\else\null#3\null%
+	\fi%\fi%
+}
+
+\def\comm@comm@defstyle{}
+
+%%%      END TYPESETTING OF COMMENTS        %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%        PROCESSING OF OPTIONS            %%%
+           \ProcessOptions\relax
+
+\comm@require@xcolor
+
+\comm@require@mparhack
+
+\if@comm@pdfcomments
+	\RequirePackage[draft]{pdfcomment}
+\fi
+
+% some eye candy
+\comm@define@marks
+
+%%%                                         %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\colorlet{todocol}{violet}
+%\colorlet{holecol}{red}
+\colorlet{draftcol}{gray}
+
+\newcommand{\CommentMarkR}{$\triangleleft$}
+\newcommand{\CommentMarkL}{$\triangleright$}
+
+\newcommand{\OpenCommentBraket}{[}
+\newcommand{\ClosedCommentBraket}{]}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                AUTHORS                  %%%
+
+% \declareauthor{nick}{name}{color}
+\gdef\comm@authors{default,final}
+%\gdef\comm@realauthors{}
+
+\newcommand{\comm@getname}[1]{\csname comm@#1@name\endcsname}
+\newcommand{\comm@getstyle}[1]{\csname comm@#1@style\endcsname}
+\def\comm@color#1{\color{#1col}}
+
+
+\newcommand{\declareauthor}[3]{
+	\def\@jude@{#1}%
+	\ifx\@jude@\@empty
+		\PackageError{commenting}{Author name cannot be empty!}{}
+	\fi
+	\@ifundefined{comm@#1@name}{}%
+		{\PackageWarning{commenting}{Author `#1' already defined: overridding.}{}}%
+	\def\@jude@{#2}%
+	\ifx\@jude@\@empty
+		\expandafter\gdef\csname comm@#1@name\endcsname{#1}
+	\else
+		\expandafter\gdef\csname comm@#1@name\endcsname{#2}
+	\fi
+	\ifx#3\relax
+		\colorlet{#1col}{black}
+	\else
+		\colorlet{#1col}{#3}
+		%\expandafter\def\csname comm@#1@color\endcsname{#3}
+	\fi
+	\expandafter\gdef\csname comm@#1@style\endcsname{\comm@comm@defstyle}
+	\expandafter\newif\csname if#1@enabled\endcsname
+	\ifdraft
+		\csname #1@enabledtrue\endcsname
+	\else
+		\csname #1@enabledfalse\endcsname
+	\fi
+	\global\edef\comm@authors{\comm@authors,#1}%
+%	\xdef\comm@authors{\comm@realauthors,#1}%
+	%\expandafter\def\csname #1\endcsname{\comm@commentn{#1}}
+}
+
+\newcommand{\setauthorstyle}[2]{
+	\expandafter\def\csname comm@#1@style\endcsname{#2}
+}
+
+\newcommand{\onlyauthors}[1]{
+	\ifdraft
+		\def\@allow@authors{#1}
+		\@for\@a:=\comm@authors\do{\csname \@a @enabledfalse\endcsname}
+		\@for\@x:=\@allow@authors\do{\csname \@x @enabledtrue\endcsname}
+		\final@enabledtrue
+	\fi
+}
+
+%% Predefined special authors "default" and "final"
+\def\resetdefaultauthor{
+	\gdef\comm@default@name{}
+	\gdef\comm@default@style{\comm@comm@defstyle}
+	\colorlet{defaultcol}{gray}
+	\newif\ifdefault@enabled
+	\ifdraft\default@enabledtrue\else\default@enabledfalse\fi
+}
+\resetdefaultauthor
+
+\newcommand{\setdefaultauthor}[1]{
+	\comm@validname{#1}
+	\gdef\comm@default@name{\comm@getname{#1}}
+	\gdef\comm@default@style{\comm@getstyle{#1}}
+	\colorlet{defaultcol}{#1col}
+	\newif\ifdefault@enabled
+	\comm@if@enabled{#1}\default@enabledtrue\else\default@enabledfalse\fi
+}
+
+
+\gdef\comm@final@name{}
+\gdef\comm@final@style{\comm@comm@defstyle}
+\colorlet{finalcol}{black}
+\newif\iffinal@enabled
+\final@enabledtrue %% always enabled
+
+\newcommand{\authorcommand}[2]{
+		\comm@validname{#1}
+		\expandafter\gdef\csname#1\endcsname{%
+			\@ifstar%
+			{\comm@parse@date{comm@#2@}{#1}}%
+			{\comm@parse@date{comm@#2}{#1}}%
+		}
+}
+
+
+%%%              END AUTHORS                %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                TODOBOX                  %%%
+
+\newlength{\comm@todowd}
+\setlength{\comm@todowd}{\columnwidth}
+\addtolength{\comm@todowd}{-4\fboxsep}
+\addtolength{\comm@todowd}{-4\fboxrule}
+
+% \gdef\comm@todo@align@c{%
+% 	\let\comm@todo@align\center%
+% 	\let\comm@todo@align@end\endcenter%
+% }
+% \gdef\comm@todo@align@l{%
+% 	\let\comm@todo@align\flushright%
+% 	\let\comm@todo@align@end\endflushright%
+% }
+% \gdef\comm@todo@align@r{%
+% 	\let\comm@todo@align\flushleft%
+% 	\let\comm@todo@align@end\endflushleft%
+% }
+%
+\let\comm@todo@align\center
+\let\comm@todo@align@end\endcenter
+%
+% 	\newcommand{\comm@todo}[1][c]{%
+% 		\csname comm@todo@align@#1\endcsname%
+% 		\comm@todobis%
+% 	}
+
+	\DeclareRobustCommand{\comm@todo}[2][]{%
+		\begingroup%
+		\def\comm@todo@arg{#2}%
+		\ifx\comm@todo@arg\@empty%
+			\comm@todo@mpar{#1}%
+		\else%
+            \setlength{\comm@todowd}{\columnwidth}%
+            \addtolength{\comm@todowd}{-\leftmargin}%
+            \addtolength{\comm@todowd}{-\rightmargin}%
+            \addtolength{\comm@todowd}{-4\fboxsep}
+            \addtolength{\comm@todowd}{-4\fboxrule}
+            \comm@todo@mpar{#1}%
+            \begin{center}%
+                \color{todocol}%
+				%\rule{.25cm}{0cm}%
+				%\rule[-.1cm]{0cm}{.4cm}%
+				\fbox{\fbox{%
+					\parbox{\comm@todowd}{%
+						\comm@todo@align%
+							#2
+						\comm@todo@align@end%
+					}%
+				}}%
+				%\rule {.25cm}{0cm}%
+			\end{center}%
+		\fi%
+		\endgroup%
+	}
+
+%%% UNDOCUMENTED
+% \begin{TodoList}[signature]{title}
+\newenvironment{TodoList}[2][]{
+	\begin{quotation}
+		\def\comm@note@sign{#1}%
+		\color{todocol}%
+		\small\noindent\TodoMarkL\ \textbf{#2}\ %
+		\hrulefill\nopagebreak\\[-3pt]
+		\setlength{\topsep}{0pt}
+		\setlength{\partopsep}{0pt}
+		\setlength{\parsep}{0pt}
+		\setlength{\itemsep}{0pt}
+		\begin{itemize}
+		\renewcommand{\labelitemi}{\small\TodoItemMark}
+		\renewcommand{\labelitemii}{$\cdot$}
+}{%
+		\end{itemize}
+		\nopagebreak%\mbox{}\\
+		\mbox{}\hrulefill%
+		\if!\comm@note@sign!\else%
+			~\textup{\texttt{\comm@note@sign}}%
+		\fi%
+	\end{quotation}%
+}
+
+\newcommand{\TodoItemMark}{{\footnotesize\NibSolidRight}}
+%%%              END TODOBOX                %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%              ARG PARSING                %%%
+
+\def\comm@parse@args#1{\@ifnextchar[{\comm@parse@author{#1}}{\comm@parse@date{#1}{default}}}
+\def\comm@parse@author#1[#2]{\comm@parse@date{#1}{#2}}
+\def\comm@parse@date#1#2{\@ifnextchar({\comm@parse@date@{#1}{#2}}{\comm@parse@txt{#1}{#2}}}
+\long\def\comm@parse@date@#1#2(#3)#4{\csname #1\endcsname{#2}{#3}{#4}}
+\long\def\comm@parse@txt#1#2#3{\csname #1\endcsname{#2}{}{#3}}
+
+%%%              ARG PARSING                %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                COMMANDS                 %%%
+
+\newcommand{\comment}{\@ifstar{\comm@comment@star}{\comm@comment@plain}}
+\def\comm@comment@plain{\comm@parse@args{comm@comment}}
+\def\comm@comment@star{\comm@parse@args{comm@comment@}}
+
+\newcommand{\changed}{\@ifstar{\comm@changed@star}{\comm@changed@plain}}
+\def\comm@changed@plain{\comm@parse@ch@args{comm@changed@txt@}}
+\def\comm@changed@star{\comm@parse@args{comm@changed@}}
+
+%%%%%%%%%%%%
+\def\comm@parse@ch@args#1{\@ifnextchar[{\comm@parse@ch@author{#1}}{\comm@parse@ch@date{#1}{default}}}
+\def\comm@parse@ch@author#1[#2]{\comm@parse@ch@date{#1}{#2}}
+\def\comm@parse@ch@date#1#2{\@ifnextchar({\comm@parse@ch@date@{#1}{#2}}{\comm@parse@ch@msg{#1}{#2}{}}}
+\def\comm@parse@ch@date@#1#2(#3){\comm@parse@ch@msg{#1}{#2}{#3}}
+\def\comm@parse@ch@msg#1#2#3{\@ifnextchar[{\comm@parse@ch@msg@{#1}{#2}{#3}}{\comm@parse@ch@txt{#1}{#2}{#3}}}
+\long\def\comm@parse@ch@msg@#1#2#3[#4]#5{\csname #1\endcsname{#2}{#3}{#5}{#4}}
+\long\def\comm@parse@ch@txt#1#2#3#4{\csname #1\endcsname{#2}{#3}{#4}{}}
+%%%%%%%%%%%%
+
+\newcommand{\annot}{\@ifstar{\comm@parse@args{comm@annot}}{\comm@parse@args{comm@annot}}}
+\let\comm@annot@\comm@comment@
+
+\ifdraft
+	\newcommand{\ondraft}[1]{\textcolor{draftcol}{#1}}
+	\newcommand{\onfinal}[1]{}
+	\newcommand{\todo}{\comm@todo}
+	\newcommand{\drafthl}[1]{\textbf{#1}}
+\else
+	\newcommand{\ondraft}[1]{}
+	\newcommand{\onfinal}[1]{#1}
+	\newcommand{\todo}[1]{}
+	\newcommand{\drafthl}[1]{#1}
+\fi
+
+% \begin{Note}[signature]{title}
+\newenvironment{Note}[2][]{
+	\begin{quotation}
+		\def\comm@note@sign{#1}%
+		\small\noindent\NoteMark\ \textbf{#2}\ %
+		\hrulefill\nopagebreak\\[3pt]
+		\it%
+}{%
+		\nopagebreak\mbox{}\\
+		\mbox{}\hrulefill%
+		\if!\comm@note@sign!\else%
+			~\textup{\texttt{\comm@note@sign}}%
+		\fi%
+	\end{quotation}%
+}
+
+\newcommand{\draftnote}[3][default]{
+	\comm@validname{#1}%
+	\comm@if@enabled{#1}%
+	\begin{quotation}
+		\small\noindent{\comm@color{#1}\NoteMark\ \textbf{#2}\ %
+		\hrulefill\nopagebreak\\[3pt]
+		\parbox{\linewidth}{\it #3}%
+		\nopagebreak\\
+		\mbox{}\hrulefill%
+		\ifx!\comm@getname{#1}!\else%
+			~\textup{\texttt{\comm@getname{#1}}}%
+		\fi}%
+	\end{quotation}%
+	\fi
+}
+\newcommand{\comm@draftnote}[3]{\draftnote[#1]{Note}{#3\comm@format@date{#2}}}
+\let\comm@draftnote@\comm@draftnote
+
+\newcommand{\comm@allcomments}{\the\comm@commlst}
+\newcommand{\listcomments}{\@ifstar{\comm@listcomments}{\ifdraft\comm@listcomments\fi}}
+\newcommand{\comm@listcomments}{
+	\ifnum\thecomm@commnum>0
+	\paragraph*{List of comments}\nopagebreak%
+    \begin{itemize}%
+        \setlength{\itemsep}{0pt}%
+        \setlength{\labelwidth}{\comm@lstlabel@width}%
+        \comm@allcomments
+	\end{itemize}
+	\fi
+}
+
+\newcommand{\authorlegend}{\@ifstar{\comm@authorlegend}{\ifdraft\comm@authorlegend\fi}}
+\newcommand{\comm@authorlegend}{
+	\paragraph*{Author Legend}\nopagebreak%
+	\begin{itemize}\setlength{\itemsep}{0pt}
+		\@for\@a:=\comm@authors\do{
+			{
+				\comm@getstyle{\@a}
+				\comm@color{\@a}\item[\AuthorMark]
+				\if!\comm@getname{\@a}!
+					\@a
+				\else
+					\comm@getname{\@a} (alias \texttt{\@a})
+				\fi
+			}
+		}
+	\end{itemize}
+}
+
+\newcommand{\setcommentstyle}[1]{\def\comm@comm@defstyle{#1}}
+
+%%%              END COMMANDS               %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%              DATE PARSING               %%%
+
+\def\comm@two@digits#1{\ifnum#1>0 \ifnum#1<10 0\fi\fi\number#1}
+\def\comm@nodate{NODATE}
+
+\def\comm@date@parse(#1)#2{%
+	\if!#1!%
+		\let\comm@date@parseout\comm@nodate%
+	\else%
+		\comm@date@parsedate{#1}%
+	\fi%
+	\let#2=\comm@date@parseout%
+}
+
+\def\SetCommentDateDelim#1{
+
+	\gdef\comm@date@parsedate##1{%
+		\def\comm@date@parseout{}%
+		\comm@date@parseloop##1#1\comm@date@empty#1%
+	}
+
+	\gdef\comm@date@parseloop##1#1{%
+		\ifx\comm@date@empty##1%
+			%\@parseout%
+		\else%
+			\edef\comm@date@parseout{\comm@two@digits{##1}\comm@date@parseout}%
+			\expandafter\comm@date@parseloop%
+		\fi%
+	}
+
+}
+
+\SetCommentDateDelim{/} % default delim
+
+\gdef\ifdate(#1>#2){%
+	\comm@date@parse(#1){\comm@date@fst}%
+	\comm@date@parse(#2){\comm@date@snd}%
+	\ifnum\comm@date@fst>\comm@date@snd%
+}
+
+\newif\if@comm@dateok\@comm@dateoktrue
+
+\comm@date@parse(){\comm@date@before}
+\comm@date@parse(){\comm@date@after}
+
+\newcommand{\IncludeNonDatedComments}{\global\let\comm@date@emptydatepolicy\@comm@dateoktrue}
+\newcommand{\ExcludeNonDatedComments}{\global\let\comm@date@emptydatepolicy\@comm@dateokfalse}
+\IncludeNonDatedComments
+
+\newcommand{\NoCommentsBefore}[1]{
+	\comm@date@parse(#1){\comm@date@before}
+	\comm@date@updatecheck
+}
+\newcommand{\NoCommentsAfter}[1]{
+	\comm@date@parse(#1){\comm@date@after}
+	\comm@date@updatecheck
+}
+
+\newcommand{\comm@date@updatecheck}{
+	\gdef\comm@date@check##1{\global\@comm@dateoktrue}
+	\ifx\comm@nodate\comm@date@before%
+		\ifx\comm@nodate\comm@date@after\else%
+	 		\gdef\comm@date@check{\comm@date@check@}
+		\fi
+	\else%
+ 		\gdef\comm@date@check{\comm@date@check@}
+	\fi
+}
+%% This is ugly (double checks)
+%% But it's a quick way of avoiding unnecessary (and unwanted) parsing
+% \newcommand{\comm@date@check}[1]{%
+% 	\global\@comm@dateoktrue%
+% 	\ifx\comm@nodate\comm@date@before%
+% 		\ifx\comm@nodate\comm@date@after\else%
+% 			\comm@date@check@{#1}%
+% 		\fi
+% 	\else%
+% 		\comm@date@check@{#1}%
+% 	\fi
+% }
+
+\gdef\comm@date@check#1{\global\@comm@dateoktrue}
+
+\newcommand{\comm@date@check@}[1]{%
+	\comm@date@parse(#1){\comm@date@fst}%
+	\ifx\comm@nodate\comm@date@fst%
+		\comm@date@emptydatepolicy%
+	\else%
+		\global\@comm@dateoktrue%
+		\ifx\comm@nodate\comm@date@before\else%
+			\ifnum\comm@date@fst<\comm@date@before%
+				\global\@comm@dateokfalse%
+			\fi%
+		\fi%
+		\if@comm@dateok%
+			\ifx\comm@nodate\comm@date@after\else%
+				\ifnum\comm@date@fst>\comm@date@after%
+					\global\@comm@dateokfalse%
+				\fi%
+			\fi
+		\fi
+	\fi%
+}
+
+
+%%%            END DATE PARSING             %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\newcommand{\draftpar}{\ifdraft\par\fi}
+\newcommand{\draftnl}{\ifdraft\newline\fi}

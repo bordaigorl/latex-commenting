@@ -1,0 +1,593 @@
+\documentclass[11pt]{article}
+
+\usepackage{listings}
+\usepackage[draft,pdfcomment]{commenting}
+
+%\usepackage{}
+
+\lstset{
+	%language=TeX,
+	basicstyle={\ttfamily\small}, % \ttfamily
+    keywordstyle={\color{blue!30!black}\bf},
+    keywordstyle={[2]\color{red!30!black}},
+	xleftmargin=20pt,
+    tabsize=4,
+    showstringspaces=false,
+    columns=flexible,
+    breaklines=false,
+    fontadjust,
+    emphstyle={\color{red!30!black}},
+    emphstyle={[2]\color{violet}},
+    emphstyle={[3]\rmfamily\it},
+    moredelim=[is][emphstyle3]{/}{/},
+    moredelim=**[is][emphstyle]{\#}{\#},
+    moredelim=**[is][emphstyle2]{@}{@},
+    literate={
+        {<}{{$\langle$}}1
+        {>}{{$\rangle$}}1
+        {_0}{{$_0$}}1
+        {_1}{{$_1$}}1
+        {_n}{{$_n$}}1
+        {_k}{{$_k$}}1
+    }
+}
+\lstdefinestyle{noslash}{deletedelim=[is]{/}{/},moredelim=[is][emphstyle3]{!}{!}}
+\lstdefinestyle{mp}{basicstyle={\ttfamily\scriptsize}}
+
+\let\cmd=\lstinline
+\def\cmdmp{\lstinline[style=mp]}
+\lstnewenvironment{latex}[1][]{\lstset{breaklines,#1}}{}
+\lstnewenvironment{latexex}[1][]{\lstset{breaklines,style=noslash,#1}}{}
+
+\declareauthor{fz}{Frank}{blue}
+\authorcommand{fz}{draftnote}
+\declareauthor{jlp}{Jean-Luc}{green!30!black}
+
+\setlength{\marginparwidth}{3.3cm}
+\newlength\mparw
+\setlength{\mparw}{3.2cm}
+\setlength{\parskip}{1.5ex}
+\setlength{\parindent}{0ex}
+
+%\usepackage{multicol}
+
+\newcommand{\docwarning}[2]{%
+	\marginpar[%
+		\leavevmode%
+		\vrule width .7pt~%
+		\vbox{\hsize=\mparw%
+		\raggedleft%
+		\scriptsize%
+		\it\textbf{#1} #2}%
+	]{%
+		\leavevmode%
+		\vrule width .7pt~%
+		\vbox{\hsize=\mparw%
+		\raggedright%
+		\scriptsize%
+		\it\textbf{#1} #2}%
+	}%
+}
+
+\newcommand{\doccmd}[2][]{%
+	\marginpar[%
+		\leavevmode%
+		\raggedleft%
+		\fbox{\cmdmp'#2'}%
+		\scriptsize\it\ #1%
+	]{%
+		\leavevmode%
+		\raggedright%
+		\fbox{\cmdmp'#2'}%
+		\scriptsize\it\ #1%
+	}%
+}
+
+\begin{document}
+
+\author{Emanuele D'Osualdo}
+\title{The \texttt{commenting} package v1.3}
+\maketitle
+%
+%\begin{multicols}{2}
+%\tableofcontents
+%\end{multicols}
+
+This package attempts to provide a simple and flexible set of macros to typeset
+(and hide) comments and remarks which are supposed to be read only by the
+authors of a multi-author document, during the process of writing and reviewing
+it. It provides macros for printing comments inline or in the margin, giving
+visual hints of their location and author. All the comments are typeset only
+when in draft mode. Pdf's native comments are also somehow optionally supported
+through the \cmd'pdfcomment' package.
+
+
+Package options are provided to globally change aspects of the appearance of the
+comments and the use of more sophisticated features (color, pdfcomment, margin
+notes). This is especially useful, for instance, when switching from a normal
+layout to a two columns one: setting the \cmd'nompar' option would suppress any
+margin note and would include all the comments inline.
+
+\section{Setup}
+
+The \texttt{commenting} package comes in a self contained single
+\verb'.sty' file so in order to use it it is sufficient to place it in a directory in the
+\TeX\ paths (i.e. the same directory of the \verb'.tex' file which is using
+the package).
+
+To start using it place
+\begin{latex}
+	\usepackage#[/<options>/]#{commenting}
+\end{latex}
+in your preamble.
+Here's the list of available options:
+\begin{itemize}
+    \item \cmd'draft'/\cmd'final'\doccmd{draft}\doccmd{final} sets on or off
+    	the draft-mode. All the comments are omitted when in final-mode.
+    	The conditional \cmd'\ifdraft' is made available for explicit detection of the current mode. If the
+	    \cmd'draft' option is specified in the \cmd'\documentclass' command it will
+	    be detected by the \cmd'commenting' package;
+    \item \cmd'nompar'\doccmd{nompar} do not use margin notes and prevents the
+    	inclusion of the package \cmd'mparhack';
+    \item \cmd'marksonly'\doccmd{marksonly} do not put text in the margin, put
+    	only the appropriate mark (see Section~\ref{sec:marks}); this is helpful
+    	when the layout requires narrow margins but some hint to quickly
+    	find comments is still desirable.
+    \item \cmd'nocolor'\doccmd{nocolor} suppress the color changes in
+    	commenting commands;
+    \item \cmd'nosign'\doccmd{nosign} causes the omission of signatures after
+    	every comment;
+    \item \cmd'nodate'\doccmd{nodate} suppresses dates in comments and
+    	annotations (not in list of comments);
+    \item \cmd'noding'\doccmd{noding} do not use dingbats. If this option is
+    	specified the package \cmd'bbding' will not be included and replacement
+    	symbols are defined;
+    \item \cmd'bfstyle', \cmd'sfstyle', \cmd'itstyle', \cmd'scstyle'
+    	\doccmd{*style} installs the specified style as default style for comments;
+    \item \cmd'pdfcomment'\doccmd{pdfcomment} enables the use of that powerful
+    	package: the \cmd'commenting' commands will, in addition to their output,
+    	produce a pdf comment (rendered only by an appropriate viewer). Please note
+    	that the pdfcomments will be produced in both draft and final mode and
+    	regardless of the \cmd'\onlyauthors' directive. To suppress them just
+    	remove this option.
+\end{itemize}
+
+\subsection{Authors}
+
+You can then specify in the preamble as many authors you need with the commands
+\doccmd{\\declareauthor}
+\begin{latex}
+	\declareauthor{/<nick>/}{/<fullname>/}{/<color>/}
+\end{latex}
+where \cmd'/<nick>/' is the mnemonic name used to identify the author in the
+\LaTeX\ code and must not contain exclamation marks, \cmd'/<fullname>/' is the
+name used as a signature, \cmd'/<color>/' is the color used for the text
+of the comments of the author.
+
+There exists two special authors:
+\begin{itemize}
+    \item \cmd'default'\doccmd[(author)]{default} is the author used when no
+    	other is specified
+    \item \cmd'final'\doccmd[(author)]{final} is the only author whose comments
+    	will be printed both in draft and final mode.
+\end{itemize}
+The default user can be set to be a declared user with
+\doccmd{\\setdefaultauthor}
+\begin{latex}
+	\setdefaultauthor{/<author>/}
+\end{latex}
+and then it can be reset to the default with
+\cmd'\resetdefaultauthor'\doccmd{\\resetdefaultauthor}.
+
+The command\doccmd{\\authorcommand}
+\begin{latex}
+	\authorcommand{/<author>/}{/<type>/}
+\end{latex}
+declares a command \cmd'\/<author>/' (and its star variant) that is equivalent
+to \mbox{\cmd'\\/<type>/[/<author>/]'}; the argument \cmd'/<type>/' can be equal
+to \cmd'comment', \cmd'annot', \linebreak\cmd'changed' or \cmd'draftnote';
+for example
+\begin{latexex}
+	\declareauthor{myself}{Joe}{blue}
+	\authorcommand{myself}{comment}
+\end{latexex}
+will make available the commands \cmd'\myself' and \cmd'\myself*' which can be
+used exactly like \cmd'\comment[myself]' and \cmd'\comment*[myself]'.
+
+In the examples we will assume the lines
+\begin{latex}
+\declareauthor{fz}{Frank}{blue}
+\declareauthor{jlp}{Jean-Luc}{green!30!black}
+\end{latex}
+in the preamble.
+
+With the command\doccmd{\\setauthorstyle}
+\begin{latex}
+	\setauthorstyle{/<author>/}{/<stylecmds>/}
+\end{latex}
+different styles can be installed for each declared author; \cmd'/<stylecmds>/'
+should contain formatting command such as \cmd'\itshape\sffamily'.
+It is also possible to change the base style of every comment with the command
+\doccmd{\\setcommentstyle}
+\begin{latex}
+	\setcommentstyle{/<stylecmds>/}
+\end{latex}
+keep in mind however that this is overwritten by \cmd'\setauthorstyle' for the
+specified author.
+
+You can always refer to an author's color with the named color \cmd'/<nick>/col'
+as in\doccmd[(color)]{/<nick>/col}
+\begin{latex}
+	\color{fzcol}
+\end{latex}
+
+The command\doccmd{\\onlyauthors}
+\begin{latex}
+	\onlyauthors{/<author_1>/,/.../,/<author_n>/}
+\end{latex}
+enables only the specified authors and mutes all the comments of the other
+authors (except \cmd'final').
+
+\section{Usage}
+
+The general syntax for commenting commands is the following:
+\begin{latex}
+	\command#[/<author>/]#@(/<date>/)@{/<message>/}
+\end{latex}
+where both \cmd'#[/<author>/]#' and \cmd'@(/<date>/)@' are optional parameters.
+If the author is not specified, \cmd'default' would be used instead.
+If the date is omitted, no date information will be printed in the comment;
+the format of the \cmd'/<date>/' field is explained in Section~\ref{sec:dates}.
+
+In the following we describe all the commands made available by the package
+which use this syntax.
+
+\newcommand{\example}[1]{%
+\begin{quote}
+	Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus orci lorem,
+	porttitor #1 non tempus in, porta id tortor. Donec blandit.
+\end{quote}%
+}%
+
+\subsection{Comments}\doccmd{\\comment}\doccmd{\\comment*}
+\begin{latex}
+\comment#[/<author>/]#@(/<date>/)@{/<message>/}
+\comment*#[/<author>/]#@(/<date>/)@{/<message>/}
+\end{latex}
+Puts a standard comment in the text.
+
+\textbf{Example:}
+\begin{latexex}
+\comment[fz](11/04){Jazz is not dead. It just smells funny}
+\end{latexex}
+\example{\comment[fz](11/04){Jazz is not dead. It just smells funny}}
+The star variant \cmd'\comment*' puts every detail about the comment in the text
+and does not produce a margin note.
+
+\textbf{Example:}
+\begin{latexex}
+\comment*[fz](11/04){Jazz is not dead. It just smells funny}
+\end{latexex}
+\example{\comment*[fz](11/04){Jazz is not dead. It just smells funny}}
+
+
+Here an example with multiple authors and some omitted parameters. Note the grey
+comment by the default author:
+\begin{latexex}
+  Lorem ipsum dolor sit amet,@\comment{Who am I?}@
+  consectetur adipiscing elit. Vivamus orci lorem,
+  porttitor non tempus in, porta id tortor. Donec
+  blandit @\comment[fz](11/04){Jazz is not dead.
+  It just smells funny}@, arcu eget tincidunt dictum,
+  @\comment[jlp]{Don't be rude Frank}@ ipsum est
+  consequat eros, at iaculis magna erat ac lectus.
+\end{latexex}
+\begin{quote}
+	Lorem ipsum dolor sit amet,\comment{Who am I?} consectetur adipiscing elit.
+	Vivamus orci lorem, porttitor non tempus in, porta id tortor. Donec blandit%
+	\comment[fz](11/04){Jazz is not dead. It just smells funny},
+	arcu eget tincidunt dictum,%
+	\comment[jlp]{Don't be rude Frank}%
+	ipsum est consequat eros, at iaculis magna erat ac
+	lectus.
+\end{quote}
+
+\subsection{Annotations}\doccmd{\\annot}
+\begin{latex}
+\annot#[/<author>/]#@(/<date>/)@{/<message>/}
+\end{latex}
+Puts a margin note comment on the side of the text. This type of comment is most
+useful when one wants to put comments without changing the spacings and the
+typesetting of the actual content.
+
+If the default margin spacings are not big enough for your needs you can change
+them with\doccmd[(length)]{marginparwidth}
+\begin{latex}
+	\setlength{\marginparwidth}{/<length>/}
+\end{latex}
+
+\textbf{Example:}
+\begin{latexex}
+\annot[fz](11/04){Jazz is not dead. It just smells funny}
+\end{latexex}
+\example{\annot[fz](11/04){Jazz is not dead. It just smells funny}}
+
+\subsection{Changes}\doccmd{\\changed}
+The command \cmd'\changed' has a slightly different syntax:
+\docwarning{Changed:}{optional message comes before content from v1.3}
+\begin{latex}
+\changed#[/<author>/]#@(/<date>/)@#[/<message>/]#{/<content>/}
+\end{latex}
+It highlights the portion of text which has been changed by the corresponding
+author: the change is typeset with the color of the author and a margin note specifies the
+author and date of the change and the optional message.
+When the \cmd'nompar' option is loaded, the optional message gets printed inline
+as in \cmd'\comment'.
+
+The star variant omits the margin note: this is necessary when using it in
+boxes or in math mode.
+\doccmd{\\changed*}
+\begin{latex}
+\changed*#[/<author>/]#@(/<date>/)@{/<content>/}
+\end{latex}
+
+\textbf{Example:}
+\begin{latexex}
+... sit \changed[jlp](11/04)[more appropriate]{amen},
+consectetur... Donec \changed[fz](11/04){non} blandit.
+\end{latexex}
+\begin{quote}
+	Lorem ipsum dolor sit
+	\changed[jlp](11/04)[more appropriate]{amen},
+	consectetur adipiscing elit. Vivamus orci lorem, porttitor non tempus in, porta id tortor.
+	Donec \changed[fz](11/04){non} blandit.
+\end{quote}
+\begin{latexex}
+$\sum_j^n\changed*[fz](11/04){\ensuremath{j_{\alpha(z^2)}}}$
+\end{latexex}
+\begin{quote}
+	Lorem ipsum dolor sit $\sum_j^n\changed*[fz](11/04){\ensuremath{j_{\alpha(z^2)}}}$, consectetur adipiscing
+	elit.
+\end{quote}
+
+\subsection{Remarks}\doccmd{\\draftnote}
+\begin{latex}
+\draftnote#[/<author>/]#{/<title>/}{/<message>/}
+\end{latex}
+Puts an indented block of text which is kept separated from the text.
+
+\textbf{Example:}
+\begin{latexex}
+\draftnote[fz]{Note on Jazz}
+	{Jazz is not dead. It just smells funny}
+\end{latexex}
+\example{\draftnote[fz]{Note on Jazz}{Jazz is not dead. It just smells funny}}
+
+\section{Lists of comments and legend}
+
+You can print all the comments in the order they are inserted with
+\doccmd{\\listcomments}
+\docwarning{Todo:}{change appearance (toc style) and collection, include page
+numbers}
+\begin{latex}
+	\listcomments
+\end{latex}
+which in this document would produce
+\listcomments
+
+The command\doccmd{\\authorlegend}
+\begin{latex}
+	\authorlegend
+\end{latex}
+prints a list of the authors with the corresponding nicks and colors for
+reference:
+\authorlegend
+
+Both commands are not typeset if not in draft mode.
+Their star variants \cmd'\listcomments*' and \cmd'\authorlegend*'
+\doccmd{\\listcomments*}\doccmd{\\authorlegend*} print their
+output in both modes.
+
+\section{Dates}\label{sec:dates}
+Almost all of the commands presented above have a field for specifying the date
+of the comment. The content in this field can have \emph{any} form.
+There are two commands that will require to specify dates in a certain format:
+\cmd'\NoCommentsBefore' and \cmd'\NoCommentsAfter'; if you do not use these
+macros you do not need to follow any particular format.
+
+In the case you want to use one of the commands used in this section, the date
+field will be interpreted as a date-like value, the format of which is very
+generic: by default it is a list of numbers separated by \cmd[style=noslash]'/'
+as for example in \cmd[style=noslash]'01' or \cmd[style=noslash]'11/7' or
+\cmd[style=noslash]'25/12/2000' or even \cmd[style=noslash]'1/2/0323/8/11/9'.
+This sequence will be printed as it is in the document in the appropriate place
+with the corresponding author style (if not suppressed by \cmd'nodate'). These
+dates will be interpreted as following: the first number in the sequence is the
+less significant, increasing significance until the end of the list; a format
+following this convention is for example \texttt{dd/mm/aa}; it is not required
+to write every number with two digits. In general, the interpretation of a
+generic sequence \cmd[style=noslash]'!n_0!/!n_1!/.../!n_k!' is the number
+$n_0 + 10^{\max(2,|n_0|)}\times n_1 +
+	\ldots +10^{\max(2k,\sum_{i}^{k-1}|n_{i}|)}\times n_k$.
+This enables the use of the commands \cmd'\NoCommentsBefore{/<date>/}' and
+\cmd'\NoCommentsAfter{/<date>/}'\doccmd{\\NoCommentsBefore}\doccmd{\\NoCommentsAfter}:
+they suppress any comment before/after the specified date.
+
+By default not dated
+comments are included even if before/after dates are set; with the macro
+\cmd'\ExcludeNonDatedComments'\doccmd{\\ExcludeNonDated...} they
+will be suppressed if a before/after date is set;
+\cmd'\IncludeNonDatedComments'\doccmd{\\IncludeNonDated...} reverts to the
+default behaviour.
+
+For example, the following code
+\begin{latexex}
+-\comment*[fz](a.XXX-c){alien date, not parsed}\\
+@\NoCommentsBefore{12/04}@
+@\NoCommentsAfter{20/04}@
+-\comment*[fz](10/04){early comment}\\
+-\comment*[fz](29/4){suppressed because after 20/04}\\
+-\comment*[fz]{included because not dated}\\
+@\ExcludeNonDatedComments@
+-\comment*[fz]{suppressed because not dated}\\
+-\comment*[fz](15/04){included because after 12/04}\\
+@\NoCommentsBefore{}@ % suppresses the before bound
+-\comment*[fz](19/04){included because no before bound is set}\\
+-\comment*[fz](29/04){suppressed because after 20/04}\\
+@\NoCommentsAfter{}@ % suppresses the after bound
+-\comment*[fz](bla){another non parsed date, no bound set}
+\end{latexex}
+outputs
+\begin{quote}
+-\comment*[fz](a.XXX-c){alien date, not parsed}\\
+\NoCommentsBefore{12/04}
+\NoCommentsAfter{20/04}
+-\comment*[fz](10/04){early comment}\\
+-\comment*[fz](29/4){suppressed because after 20/04}\\
+-\comment*[fz]{included because not dated}\\
+\ExcludeNonDatedComments
+-\comment*[fz]{suppressed because not dated}\\
+-\comment*[fz](15/04){included because after 12/04}\\
+\NoCommentsBefore{} % suppresses the before bound
+-\comment*[fz](19/04){included because no before bound is set}\\
+-\comment*[fz](29/04){suppressed because after 20/04}\\
+\NoCommentsAfter{} % suppresses the after bound
+-\comment*[fz](bla){another non parsed date, no bound set}
+\end{quote}
+
+The command \cmd'\SetCommentDateDelim{/<delim>/}'\doccmd{\\SetCommentDateDelim}
+can be invoked to change the delimiter of a date:
+\begin{latexex}
+\SetCommentDateDelim{.}
+\NoCommentsBefore{08.2008}
+\comment*[jlp](1.2008){suppressed}
+\comment*[jlp](10.2008){included}
+\end{latexex}
+
+For obvious reasons, it is recommended to use a uniform date format convention
+within a document; however it is possible to change delimiter and range in any
+point of the document: the changes will have effect from that point through the
+rest of the document.
+
+\section{Other commands}
+
+There are a couple of more commands which do not follow the `author' system.
+They are used to typeset generic remarks, notes that one want to put
+after a paragraph but which are meant to be read only by other authors.
+
+The simple \cmd'\ondraft{/<text>/}'\doccmd{\\ondraft} command prints its
+argument only when in draft mode. Analogously the
+\cmd'\onfinal{/<text>/}'\doccmd{\\onfinal} command prints its argument only when
+in final mode.
+
+In order to insert artificial spacing between comments that does not get produced
+when not in draft mode, the package defines the commands
+\cmd'\draftnl'\doccmd{\\draftnl} for newline and
+\cmd'\draftpar'\doccmd{\\draftpar} for paragraph.
+Compare the two outputs:\\
+\begin{minipage}{.5\linewidth}
+\begin{latexex}
+\comment*[fz]{Can I tell you something Jean-Luc?}
+\comment*[jlp]{Yes, go ahead}
+\comment*[fz]{You stink}
+\end{latexex}
+\end{minipage}\hfill
+\begin{minipage}{.4\linewidth}
+\small
+\comment*[fz]{Can I tell you something Jean-Luc?}
+\comment*[jlp]{Yes, go ahead}
+\comment*[fz]{You stink}
+\end{minipage}
+
+\begin{minipage}{.5\linewidth}
+\begin{latexex}
+\comment*[fz]{Can I tell you something Jean-Luc?}
+\draftnl
+\comment*[jlp]{Yes, go ahead}
+\draftnl
+\comment*[fz]{You stink}
+\end{latexex}
+\end{minipage}\hfill
+\begin{minipage}{.4\linewidth}
+\small
+\comment*[fz]{Can I tell you something Jean-Luc?}\draftnl
+\comment*[jlp]{Yes, go ahead}\draftnl
+\comment*[fz]{You stink}
+\end{minipage}
+
+The \cmd'Note' environment\doccmd[(environment)]{note}
+\docwarning{Changed:}{note renamed to Note to avoid clashes with common packages
+from v1.3}
+\begin{latex}
+	\begin{Note}#[/<signature>/]#{/<title>/}
+		/<message>/
+	\end{Note}
+\end{latex}
+is similar to \cmd'\draftnote' but has no author and is typeset in both draft and
+final modes.
+
+%\pagebreak[4]
+\textbf{Example:}
+\begin{latexex}
+\begin{Note}[The Authors]{Note on Jazz}
+Jazz is not dead. It just smells funky.
+\end{Note}
+\end{latexex}
+\example{\begin{Note}[The Authors]{Note on Jazz}
+Jazz is not dead. It just smells funky.
+\end{Note}}
+
+The \cmd'todo' command
+\begin{latex}
+	\todo#[/<annotation>/]#{/<message>/}
+\end{latex}
+puts a box in the middle of the text as a placeholder for
+something that will be written in the future. This command will not print
+anything when in final mode.
+
+\textbf{Example:}
+\begin{latexex}
+\todo[For Frank]{The best jazz smell in the world.\\Frank, can you do it?}
+\end{latexex}
+\example{\todo[For Frank]%
+	{The best jazz smell in the world.\\Frank, can you do it?}}
+
+%%% UNDOCUMENTED
+% \example{\begin{TodoList}{For Frank}%
+% 	\item The best jazz smell in the world.\item Frank, can you do
+% 	it?\end{TodoList}}
+
+The color of \cmd'todo' boxes is named `\cmd'todocol'' and can be changed at any
+time with \cmd'\colorlet{todocol}{/<color>/}'.
+
+\section{Symbols}\label{sec:marks}
+
+Several commands can be overridden (or used) to control the typesetting of
+symbols used by the package:
+%\begin{table}[htb]
+\begin{center}
+	\begin{tabular}{rcc}
+	\textbf{Command} & \textbf{Symbol} & \textbf{with \texttt{noding}}\\
+	\cmd'\CommentMarkR' & \CommentMarkR & \CommentMarkR \\
+	\cmd'\CommentMarkL'  & \CommentMarkL & \CommentMarkL \\
+	\cmd'\OpenCommentBraket' & \OpenCommentBraket & \OpenCommentBraket \\
+	\cmd'\ClosedCommentBraket' & \ClosedCommentBraket & \ClosedCommentBraket \\
+	\cmd'\NoteMark' & \NoteMark & $\star$ \\
+	\cmd'\ChangedMarkR' & \ChangedMarkR & \textasteriskcentered \\
+	\cmd'\ChangedMarkL' & \ChangedMarkL & \textasteriskcentered\\
+	\cmd'\TodoMarkR' & \TodoMarkR & \textdagger\\
+	\cmd'\TodoMarkL' & \TodoMarkL & \textdagger\\
+	\cmd'\AuthorMark' & \AuthorMark & \textbullet
+	\end{tabular}
+\end{center}
+%\caption{Symbols defined and used by the package}
+%\label{tab:symbols}
+%\end{table}
+ There are few named colors that can be redefined:
+\cmd'draftcol'\doccmd[(color)]{draftcol} (\cmd'gray' by default) and
+\cmd'finalcol'\doccmd[(color)]{finalcol} (\cmd'black' by default) are the colors
+of the corresponding special authors;
+\cmd'todocol'\doccmd[(color)]{todocol} (\cmd'violet' by default) is the color of
+\cmd'\todo' boxes.
+
+\end{document}
