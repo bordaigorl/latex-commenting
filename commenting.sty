@@ -255,7 +255,7 @@
 	\fi\fi% endif
 	\if@comm@pdfcomments%
 		\pdfcomment[color=#1col, author=\comm@getname{#1}]{#3}%
-	\fi\ignorespaces%
+	\fi\comm@ignorespaces%
 }
 \newcommand{\comm@comment@}[3]{%
 	\comm@validname{#1}%
@@ -274,7 +274,7 @@
 	\fi\fi%
 	\if@comm@pdfcomments%
 		\pdfcomment[color=#1col, author=\comm@getname{#1}]{#3}%
-	\fi\ignorespaces%
+	\fi\comm@ignorespaces%
 }
 
 \newcommand{\comm@annot}[3]{%
@@ -297,7 +297,7 @@
 	\fi\fi%
 	\if@comm@pdfcomments%
 		\pdfmargincomment[color=#1col, author=\comm@getname{#1}]{#3}%
-	\fi\ignorespaces%
+	\fi\comm@ignorespaces%
 }
 
 \newcommand{\comm@changed}[3]{%
@@ -366,6 +366,12 @@
 %%%                                         %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+\ifdraft
+	\let\comm@ignorespaces\relax
+\else
+	\let\comm@ignorespaces\ignorespaces
+\fi
 
 \colorlet{todocol}{violet}
 %\colorlet{holecol}{red}
