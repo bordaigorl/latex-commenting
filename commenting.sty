@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%            commenting.sty Version 1.3             %%%
+%%%            commenting.sty Version 1.5             %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                       %
 %               Copyright (C) 2011 by:                  %
@@ -35,7 +35,7 @@
 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{commenting}%
-	[2011/07/04 commenting.sty v1.4 - Emanuele D'Osualdo]
+	[2014/09/29 commenting.sty v1.5 - Emanuele D'Osualdo]
 
 \newif\ifdraft
 \newif\if@comm@pdfcomments\@comm@pdfcommentsfalse
@@ -58,7 +58,7 @@
 	\renewcommand{\comm@comment@signature}[1]{}
 	\renewcommand{\comm@comment@format@signature}[1]{}
 }
-\DeclareOption{nodate}{\renewcommand{\comm@format@date}[1]{}}
+\DeclareOption{nodate}{\renewcommand{\comm@format@date}[2][]{}}
 
 \DeclareOption{nompar}{
 	\renewcommand{\comm@comment@signature}{\comm@comment@format@signature}
@@ -168,7 +168,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%        TYPESETTING OF COMMENTS          %%%
 
-\newcommand{\comm@format@date}[1]{\ifx!#1!\else(#1)\,\fi}
+\newcommand{\comm@format@date}[2][]{\ifx!#2!\else#1(#2)\,\fi}
 
 \newcommand{\comm@comment@format@signature}[1]{%
 	\if!\comm@getname{#1}!\else\,--\,\texttt{\comm@getname{#1}}\fi}
@@ -204,14 +204,14 @@
 		\raggedleft\footnotesize\comm@color{#1}%
 		\ChangedMarkL~\ifx#3\relax\else #3 --\fi%
 		\ifx#1\relax\else\texttt{\comm@getname{#1}}~\fi%
-		{\tiny\raisebox{.5pt}{\comm@format@date{#2}}}%
+		{\tiny\raisebox{.5pt}{\comm@format@date[~]{#2}}}%
 	]%
 	{%
 		\leavevmode%
 		\raggedright\footnotesize\comm@color{#1}%
 		\ChangedMarkR~\ifx#3\relax\else #3 --\fi%
 		\ifx#1\relax\else\texttt{\comm@getname{#1}}~\fi%
-		{\tiny\raisebox{.5pt}{\comm@format@date{#2}}}%
+		{\tiny\raisebox{.5pt}{\comm@format@date[~]{#2}}}%
 	}%
 }
 
@@ -285,14 +285,14 @@
 		\marginpar%
 			[\leavevmode%
 			 \raggedleft\footnotesize\comm@color{#1}%
-			 \comm@getstyle{#1}\CommentMarkL~{#3} %
+			 \comm@getstyle{#1}\CommentMarkL~{#3}%
 			 \comm@comment@format@signature{#1}%
-			 {~\tiny\raisebox{.5pt}{\comm@format@date{#2}}}]%
+			 {\tiny\raisebox{.5pt}{\comm@format@date[~]{#2}}}]%
 			{\leavevmode%
 			 \raggedright\footnotesize\comm@color{#1}%
-			 \comm@getstyle{#1}\CommentMarkR~{#3} %
+			 \comm@getstyle{#1}\CommentMarkR~{#3}%
 			 \comm@comment@format@signature{#1}%
-			 {~\tiny\raisebox{.5pt}{\comm@format@date{#2}}}}%
+			 {\tiny\raisebox{.5pt}{\comm@format@date[~]{#2}}}}%
 			\comm@logcomment{#1}{#2}{#3}{\CommentMarkL}%
 	\fi\fi%
 	\if@comm@pdfcomments%
