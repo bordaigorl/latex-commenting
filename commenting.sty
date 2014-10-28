@@ -1,8 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%            commenting.sty Version 1.5             %%%
+%%%            commenting.sty Version 1.5.1           %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                       %
-%               Copyright (C) 2011 by:                  %
+%               Copyright (C) 2014 by:                  %
 %                                                       %
 %                 Emanuele D'Osualdo                    %
 %            <emanuele.dosualdo@gmail.com>              %
@@ -35,7 +35,7 @@
 
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{commenting}%
-	[2014/09/29 commenting.sty v1.5 - Emanuele D'Osualdo]
+	[2014/10/28 commenting.sty v1.5.1 - Emanuele D'Osualdo]
 
 \newif\ifdraft
 \newif\if@comm@pdfcomments\@comm@pdfcommentsfalse
@@ -613,7 +613,7 @@
 \else
 	\newcommand{\ondraft}[1]{}
 	\newcommand{\onfinal}[1]{#1}
-	\newcommand{\todo}[1]{}
+	\DeclareRobustCommand{\todo}[2][]{}
 	\newcommand{\drafthl}[1]{#1}
 \fi
 
