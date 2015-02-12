@@ -1,6 +1,9 @@
 The `commenting` LaTeX package
 ==============================
 
+[![rel badge]][releases]
+[![licence badge])][licence]
+
 This package attempts to provide a simple and flexible set of macros to typeset
 (and hide) comments and remarks which are supposed to be read only by the
 authors of a multi-author document, during the process of writing and reviewing
@@ -15,7 +18,9 @@ notes). This is especially useful, for instance, when switching from a normal
 layout to a two columns one: setting the `nompar` option would suppress any
 margin note and would include all the comments inline.
 
-Copyright 2012 Emanuele D'Osualdo. Released under the LaTeX Project Public License.
+Copyright (c) 2012-2015, Emanuele D'Osualdo.
+
+Released under the LaTeX Project Public License.
 
 ## Basic Usage
 
@@ -57,3 +62,8 @@ One of the cool features of `commenting` is its ability to selectively turn comm
 To only display comments by a subset of the authors, or comments within a temporal span.
 
 Read the documentation for more details on all the options and macros.
+
+[releases]: https://github.com/bordaigorl/latex-commenting/releases
+[rel badge]: https://img.shields.io/github/release/bordaigorl/latex-commenting.svg
+[licence]: http://www.latex-project.org/lppl.txt
+[licence badge]: https://img.shields.io/badge/licence-LaTeX%20Project%20Public-3C3C3C.svg
